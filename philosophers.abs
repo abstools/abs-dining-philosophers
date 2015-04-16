@@ -1,0 +1,76 @@
+// Written by Daniel Rødskog 2014
+// http://www.mn.uio.no/ifi/english/research/groups/pma/completedmasters/2014/rodskog/
+
+module Philosophers;
+
+interface Philosopher { }
+
+interface Fork {
+    Unit grab(Philosopher owner);
+    Unit release(Philosopher owner);
+}
+
+
+class Philosopher(Fork f1, Fork f2) implements Philosopher {
+
+    Unit run() {
+        while (True) {
+            this.tell("is thinking");
+
+            Fut<Unit> f;
+            f = f1!grab(this);
+            f.get;
+
+            // await f1!grab(this);
+
+            this.tell("grabbed left fork");
+
+            // await f2!grab(this);
+            f = f2!grab(this);
+            f.get;
+
+            this.tell("grabbed right fork");
+            this.tell("is eating");
+
+            f1!release(this);
+            f2!release(this);
+
+            this.tell("released both forks");
+        }
+    }
+
+    Unit tell(String s) {
+        Unit p = println(toString(this)+" "+s);
+    }
+}
+
+class Fork implements Fork {
+    Philosopher owner;
+
+    Unit grab(Philosopher p) {
+        await owner == null;
+        owner = p;
+    }
+
+    Unit release(Philosopher p) {
+        if (p == owner)
+            owner = null;
+    }
+    
+}
+
+
+// MAIN //
+{
+    Fork f1 = new Fork();
+    Fork f2 = new Fork();
+    Fork f3 = new Fork();
+    Fork f4 = new Fork();
+    Fork f5 = new Fork();
+
+    new Philosopher(f1, f2);
+    new Philosopher(f2, f3);
+    new Philosopher(f3, f4);
+    new Philosopher(f4, f5);
+    new Philosopher(f5, f1);
+}
